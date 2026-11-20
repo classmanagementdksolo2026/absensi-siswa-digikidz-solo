@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABSENSI SISWA DIGIKIDZ SOLO</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    :root {
+      --primary: #6d28d9;
+      --primary-dark: #5b21b6;
+      --primary-light: #ede9fe;
+      --accent: #9333ea;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1e1b4b;
+      --muted: #6b7280;
+      --border: #ddd6fe;
+      --danger: #dc2626;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); min-height: 100vh; }
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff;
+      padding: 16px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 10px rgba(109, 40, 217, 0.2);
+    }
+    header h1 { margin: 0; font-size: 1.25rem; letter-spacing: 0.3px; }
+    header small { opacity: 0.92; display: block; margin-top: 2px; }
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .tab-btn {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      transition: 0.15s;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.3); }
+    .tab-btn.active { background: #fff; color: var(--primary-dark); }
+    .btn-admin-toggle {
+      background: #fff;
+      color: var(--primary-dark);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-logout {
+      background: #fee2e2;
+      color: #991b1b;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .student-wrapper { max-width: 540px; margin: 42px auto; padding: 0 16px; }
+    .admin-wrapper { max-width: 1200px; margin: 22px auto; padding: 0 16px; }
+    .hidden { display: none !important; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 4px 16px rgba(109, 40, 217, 0.08);
+    }
+    .card h2 { margin: 0 0 14px; font-size: 1.15rem; color: var(--text); }
+    label { display: block; font-size: 0.86rem; font-weight: 600; margin-bottom: 6px; color: #4b5563; }
+    input, select, button {
+      padding: 10px 12px;
+      border-radius: 9px;
+      border: 1px solid #cbd5e1;
+      font-size: 0.95rem;
+    }
+    input:focus, select:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    .scan-box { display: flex; gap: 8px; margin-bottom: 12px; }
+    .scan-box input { flex: 1; font-size: 1rem; font-weight: 600; }
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-secondary {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: #ddd6fe; }
+    .btn-edit {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+    }
+    .btn-edit:hover { background: #fde68a; }
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+    }
+
+    .prog-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .prog-komputer { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .prog-robotik { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+    .prog-kinari-art { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; }
+
+    .status-msg {
+      padding: 12px 14px;
+      border-radius: 9px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 12px;
+      display: none;
+      line-height: 1.4;
+    }
+    .status-msg.ok { display: block; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .status-msg.err { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    @media (max-width: 600px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+    .stat-box strong { display: block; font-size: 1.4rem; color: var(--primary); }
+    .stat-box span { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+    th { background: var(--bg); font-weight: 700; color: var(--primary-dark); }
+    .action-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .barcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 14px; }
+    .barcode-card {
+      border: 1px dashed var(--primary);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      background: #fff;
+      break-inside: avoid;
+    }
+    .barcode-card .nama { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+    .barcode-card .meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    #reader { width: 100%; max-width: 380px; margin: 12px auto 0; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 27, 75, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+    }
+    .modal-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 22px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    @media print {
+      header, .no-print { display: none !important; }
+      body { background: #fff; }
+      .card { border: none; box-shadow: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>ABSENSI SISWA DIGIKIDZ SOLO</h1>
+      <small id="clockText">Memuat waktu...</small>
+    </div>
+
+    <div id="guestHeaderActions" class="header-actions no-print">
+      <button type="button" class="btn-admin-toggle" onclick="openLoginModal()">Login Admin</button>
+    </div>
+
+    <div id="adminHeaderActions" class="header-actions no-print hidden">
+      <button class="tab-btn active" onclick="switchAdminTab('rekap', this)">Rekap Absen</button>
+      <button class="tab-btn" onclick="switchAdminTab('master', this)">Master Siswa</button>
+      <button class="tab-btn" onclick="switchAdminTab('barcode', this)">Cetak Barcode</button>
+      <button class="tab-btn" onclick="switchAdminTab('settings', this)">PIN Admin</button>
+      <button type="button" class="btn-logout" onclick="logoutAdmin()">Keluar Admin</button>
+    </div>
+  </header>
+
+  <main id="studentView" class="student-wrapper">
+    <div class="card">
+      <h2>Scan Barcode / Input Kode Siswa</h2>
+      <div style="margin-bottom:12px;">
+        <label for="defaultStatus">Keterangan Default Saat Scan</label>
+        <select id="defaultStatus" style="width:100%;">
+          <option value="Masuk">Masuk</option>
+          <option value="Replace">Replace</option>
+          <option value="Cuti">Cuti</option>
+          <option value="Tidak Masuk">Tidak Masuk</option>
+        </select>
+      </div>
+      <form id="scanForm" class="scan-box">
+        <input type="text" id="barcodeInput" placeholder="Scan barcode atau ketik kode (mis. DKZ-001)" autofocus autocomplete="off" />
+        <button type="submit" id="scanSubmitBtn" class="btn">Catat</button>
+      </form>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn-secondary" onclick="toggleCamera()">Buka / Tutup Kamera</button>
+        <button type="button" class="btn-secondary" onclick="focusScan()">Fokuskan Input</button>
+      </div>
+      <div id="reader"></div>
+      <div id="scanFeedback" class="status-msg"></div>
+    </div>
+  </main>
+
+  <main id="adminView" class="admin-wrapper hidden">
+    <section id="panel-rekap" class="panel active">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+          <h2 style="margin:0;">Rekap Absensi Hari Ini (Google Sheet Admin)</h2>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-secondary" onclick="syncFromGoogle()">Sync Google Sheet</button>
+            <button type="button" class="btn-secondary" onclick="exportCSV()">Export CSV</button>
+            <button type="button" class="btn-danger" onclick="clearTodayLogs()">Reset Hari Ini</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat-box"><strong id="cntMasuk">0</strong><span>Masuk</span></div>
+          <div class="stat-box"><strong id="cntReplace">0</strong><span>Replace</span></div>
+          <div class="stat-box"><strong id="cntCuti">0</strong><span>Cuti</span></div>
+          <div class="stat-box"><strong id="cntAbsen">0</strong><span>Tidak Masuk</span></div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Jam</th>
+                <th>Kode</th>
+                <th>Nama Siswa</th>
+                <th>Program</th>
+                <th>Level</th>
+                <th>Keterangan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="absenTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-master" class="panel">
+      <div class="card">
+        <h2 id="studentFormTitle">Tambah Data Master Siswa</h2>
+        <form id="studentForm">
+          <div class="form-grid">
+            <div>
+              <label for="stCode">Kode Barcode Siswa</label>
+              <input type="text" id="stCode" placeholder="DKZ-004" required />
+            </div>
+            <div>
+              <label for="stName">Nama Siswa</label>
+              <input type="text" id="stName" placeholder="Nama lengkap" required />
+            </div>
+            <div>
+              <label for="stProgram">Program</label>
+              <select id="stProgram">
+                <option value="Komputer">Komputer</option>
+                <option value="Robotik">Robotik</option>
+                <option value="Kinari Art">Kinari Art</option>
+              </select>
+            </div>
+            <div>
+              <label for="stLevel">Level</label>
+              <input type="text" id="stLevel" placeholder="KA Junior / Grade 1" required />
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="submit" id="stSubmitBtn" class="btn">Simpan ke Master Siswa</button>
+            <button type="button" id="stCancelBtn" class="btn-secondary hidden" onclick="cancelEditStudent()">Batal Edit</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h2>Daftar Master Siswa</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Kode</th>
+                <th>Nama Siswa</th>
+                <th>Program</th>
+                <th>Level</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="masterTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-barcode" class="panel">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;" class="no-print">
+          <div>
+            <h2 style="margin:0;">Generator & Cetak Kartu Barcode Siswa</h2>
+            <small style="color:var(--muted);">Cocok dicetak lalu ditempel di kartu murid atau folder kelas.</small>
+          </div>
+          <button type="button" class="btn" onclick="window.print()">Print Barcode</button>
+        </div>
+        <div id="barcodeList" class="barcode-grid"></div>
+      </div>
+    </section>
+
+    <section id="panel-settings" class="panel">
+      <div class="card" style="max-width:420px;">
+        <h2>Ubah PIN Akses Admin</h2>
+        <form id="pinForm">
+          <label for="newPinInput">PIN Baru (minimal 4 angka)</label>
+          <input type="password" id="newPinInput" minlength="4" placeholder="Masukkan PIN baru" style="width:100%; margin-bottom:12px;" required />
+          <button type="submit" class="btn">Simpan PIN Baru</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div id="loginModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h2 style="margin-top:0;">Login Khusus Admin</h2>
+      <p style="font-size:0.85rem; color:var(--muted); margin-top:-6px;">Masukkan PIN Admin untuk mengelola data siswa & rekap absensi.</p>
+      <form id="loginForm">
+        <input type="password" id="adminPinInput" placeholder="Masukkan PIN (Default: 1234)" style="width:100%; margin-bottom:10px;" required />
+        <div id="loginError" style="color:var(--danger); font-size:0.83rem; font-weight:600; margin-bottom:10px;" class="hidden">PIN Admin salah!</div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button type="button" class="btn-secondary" onclick="closeLoginModal()">Batal</button>
+          <button type="submit" class="btn">Masuk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxNScS9a0PXG4sMe8IXUq7KqImLFs_COMgCvup8Wp9TIlYphirxuZfrqYGj34SQiZIl/exec';
+    const CACHE_STUDENTS = 'dkz_cache_students_v4';
+    const CACHE_LOGS = 'dkz_cache_logs_v4';
+    const CACHE_PIN = 'dkz_cache_pin_v4';
+
+    const DEFAULT_STUDENTS = [
+      { code: 'DKZ-001', name: 'Arka Pratama', program: 'Komputer', level: 'KA Junior' },
+      { code: 'DKZ-002', name: 'Nayla Putri', program: 'Robotik', level: 'Grade 1' },
+      { code: 'DKZ-003', name: 'Rafa Wijaya', program: 'Kinari Art', level: 'KA Little Artist' }
+    ];
+
+    let students = JSON.parse(localStorage.getItem(CACHE_STUDENTS)) || DEFAULT_STUDENTS;
+    let logs = JSON.parse(localStorage.getItem(CACHE_LOGS)) || [];
+    let adminPin = localStorage.getItem(CACHE_PIN) || '1234';
+    let editingCode = null;
+    let isAdmin = false;
+    let html5QrCode = null;
+    let cameraActive = false;
+    let lastCameraScan = { code: '', time: 0 };
+
+    function saveCache() {
+      localStorage.setItem(CACHE_STUDENTS, JSON.stringify(students));
+      localStorage.setItem(CACHE_LOGS, JSON.stringify(logs));
+      localStorage.setItem(CACHE_PIN, adminPin);
+    }
+
+    function isApiConfigured() {
+      return API_URL && API_URL.startsWith('https://script.google.com/');
+    }
+
+    async function postToGoogle(payload) {
+      if (!isApiConfigured()) return null;
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    }
+
+    async function syncFromGoogle() {
+      if (!isApiConfigured()) return;
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        if (data && data.ok) {
+          students = data.students || [];
+          logs = data.logs || [];
+          adminPin = data.adminPin || '1234';
+          saveCache();
+          if (isAdmin) {
+            renderLogs();
+            renderMaster();
+            if (document.getElementById('panel-barcode').classList.contains('active')) {
+              renderBarcodes();
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    function todayKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clockText').textContent =
+        now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
+        ' • ' + now.toLocaleTimeString('id-ID');
+    }
+
+    function getProgramBadge(program) {
+      const p = (program || '').trim();
+      let cls = 'prog-komputer';
+      if (p.toLowerCase() === 'robotik') cls = 'prog-robotik';
+      else if (p.toLowerCase() === 'kinari art') cls = 'prog-kinari-art';
+      return `<span class="prog-badge ${cls}">${p || '-'}</span>`;
+    }
+
+    function openLoginModal() {
+      document.getElementById('loginError').classList.add('hidden');
+      document.getElementById('adminPinInput').value = '';
+      document.getElementById('loginModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('adminPinInput').focus(), 50);
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.add('hidden');
+      if (!isAdmin) focusScan();
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      await syncFromGoogle();
+      const entered = document.getElementById('adminPinInput').value.trim();
+      if (entered === adminPin) {
+        isAdmin = true;
+        closeLoginModal();
+        stopCameraIfRunning();
+        document.getElementById('studentView').classList.add('hidden');
+        document.getElementById('guestHeaderActions').classList.add('hidden');
+        document.getElementById('adminView').classList.remove('hidden');
+        document.getElementById('adminHeaderActions').classList.remove('hidden');
+        renderLogs();
+        renderMaster();
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    });
+
+    function logoutAdmin() {
+      isAdmin = false;
+      cancelEditStudent();
+      document.getElementById('adminView').classList.add('hidden');
+      document.getElementById('adminHeaderActions').classList.add('hidden');
+      document.getElementById('studentView').classList.remove('hidden');
+      document.getElementById('guestHeaderActions').classList.remove('hidden');
+      focusScan();
+    }
+
+    function switchAdminTab(tabName, btn) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('panel-' + tabName).classList.add('active');
+      if (btn) btn.classList.add('active');
+      if (tabName === 'barcode') renderBarcodes();
+      if (tabName === 'rekap') renderLogs();
+      if (tabName === 'master') renderMaster();
+    }
+
+    document.getElementById('pinForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const newPin = document.getElementById('newPinInput').value.trim();
+      if (newPin.length < 4) return;
+      adminPin = newPin;
+      saveCache();
+      await postToGoogle({ action: 'updatePin', pin: newPin });
+      this.reset();
+      alert('PIN Admin berhasil diperbarui.');
+    });
+
+    function focusScan() {
+      const inp = document.getElementById('barcodeInput');
+      if (inp) inp.focus();
+    }
+
+    function showFeedback(text, isOk) {
+      const el = document.getElementById('scanFeedback');
+      el.textContent = text;
+      el.className = 'status-msg ' + (isOk ? 'ok' : 'err');
+    }
+
+    async function processScan(rawCode) {
+      const code = (rawCode || '').trim().toUpperCase();
+      if (!code) return;
+      const statusVal = document.getElementById('defaultStatus').value;
+      const btn = document.getElementById('scanSubmitBtn');
+      btn.disabled = true;
+
+      if (isApiConfigured()) {
+        try {
+          const res = await postToGoogle({ action: 'scan', code, status: statusVal });
+          btn.disabled = false;
+          if (res && res.ok) {
+            if (res.entry) logs.unshift(res.entry);
+            saveCache();
+            if (isAdmin) renderLogs();
+            showFeedback(res.message, true);
+          } else {
+            showFeedback((res && res.message) || `Kode "${code}" belum terdaftar.`, false);
+          }
+          return;
+        } catch (_) {}
+      }
+
+      btn.disabled = false;
+      const student = students.find(s => s.code.toUpperCase() === code);
+      if (!student) {
+        showFeedback(`Kode "${code}" belum terdaftar.`, false);
+        return;
+      }
+      const now = new Date();
+      const timeStr = now.toTimeString().slice(0, 5);
+      logs.unshift({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        date: todayKey(),
+        time: timeStr,
+        code: student.code,
+        name: student.name,
+        program: student.program,
+        level: student.level,
+        status: statusVal
+      });
+      saveCache();
+      if (isAdmin) renderLogs();
+      showFeedback(`Berhasil Absen [${timeStr}]: ${student.name} (${student.program} - ${student.level}) • ${statusVal}`, true);
+    }
+
+    document.getElementById('scanForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const input = document.getElementById('barcodeInput');
+      processScan(input.value);
+      input.value = '';
+      input.focus();
+    });
+
+    async function stopCameraIfRunning() {
+      if (cameraActive && html5QrCode) {
+        try {
+          await html5QrCode.stop();
+          html5QrCode.clear();
+        } catch (_) {}
+        cameraActive = false;
+        document.getElementById('reader').innerHTML = '';
+      }
+    }
+
+    async function toggleCamera() {
+      if (cameraActive) {
+        await stopCameraIfRunning();
+        return;
+      }
+      html5QrCode = new Html5Qrcode('reader');
+      try {
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 240, height: 120 } },
+          (decodedText) => {
+            const clean = (decodedText || '').trim().toUpperCase();
+            const now = Date.now();
+            if (clean === lastCameraScan.code && now - lastCameraScan.time < 2500) return;
+            lastCameraScan = { code: clean, time: now };
+            processScan(clean);
+          },
+          () => {}
+        );
+        cameraActive = true;
+      } catch (err) {
+        showFeedback('Izin kamera ditolak/diblokir browser. Ketuk ikon gembok/kamera di address bar lalu pilih Izinkan, atau ketik kode siswa langsung.', false);
+      }
+    }
+
+    function renderLogs() {
+      const today = todayKey();
+      const todayLogs = logs.filter(l => l.date === today);
+
+      document.getElementById('cntMasuk').textContent = todayLogs.filter(l => l.status === 'Masuk').length;
+      document.getElementById('cntReplace').textContent = todayLogs.filter(l => l.status === 'Replace').length;
+      document.getElementById('cntCuti').textContent = todayLogs.filter(l => l.status === 'Cuti').length;
+      document.getElementById('cntAbsen').textContent = todayLogs.filter(l => l.status === 'Tidak Masuk').length;
+
+      const tbody = document.getElementById('absenTableBody');
+      tbody.innerHTML = '';
+
+      if (todayLogs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7280;">Belum ada data absensi hari ini.</td></tr>';
+        return;
+      }
+
+      todayLogs.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.time}</td>
+          <td><strong>${item.code}</strong></td>
+          <td>${item.name}</td>
+          <td>${getProgramBadge(item.program)}</td>
+          <td>${item.level}</td>
+          <td>
+            <select onchange="updateLogStatus('${item.id}', this.value)">
+              <option value="Masuk" ${item.status === 'Masuk' ? 'selected' : ''}>Masuk</option>
+              <option value="Replace" ${item.status === 'Replace' ? 'selected' : ''}>Replace</option>
+              <option value="Cuti" ${item.status === 'Cuti' ? 'selected' : ''}>Cuti</option>
+              <option value="Tidak Masuk" ${item.status === 'Tidak Masuk' ? 'selected' : ''}>Tidak Masuk</option>
+            </select>
+          </td>
+          <td><button class="btn-danger" onclick="deleteLog('${item.id}')">Hapus</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function updateLogStatus(id, newStatus) {
+      const target = logs.find(l => l.id === id);
+      if (target) target.status = newStatus;
+      saveCache();
+      renderLogs();
+      await postToGoogle({ action: 'updateLogStatus', id, status: newStatus });
+    }
+
+    async function deleteLog(id) {
+      logs = logs.filter(l => l.id !== id);
+      saveCache();
+      renderLogs();
+      await postToGoogle({ action: 'deleteLog', id });
+    }
+
+    async function clearTodayLogs() {
+      if (!confirm('Hapus seluruh rekap absensi hari ini di Google Sheet Admin?')) return;
+      const today = todayKey();
+      logs = logs.filter(l => l.date !== today);
+      saveCache();
+      renderLogs();
+      await postToGoogle({ action: 'clearTodayLogs', date: today });
+    }
+
+    function exportCSV() {
+      const today = todayKey();
+      const todayLogs = logs.filter(l => l.date === today);
+      const headers = ['Tanggal', 'Jam', 'Kode', 'Nama Siswa', 'Program', 'Level', 'Keterangan'];
+      const rows = todayLogs.map(l => [l.date, l.time, l.code, l.name, l.program, l.level, l.status]);
+      const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `absensi-digikidz-solo-${today}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function startEditStudent(code) {
+      const target = students.find(s => s.code.toUpperCase() === code.toUpperCase());
+      if (!target) return;
+      editingCode = target.code;
+      document.getElementById('stCode').value = target.code;
+      document.getElementById('stName').value = target.name;
+      document.getElementById('stProgram').value = target.program;
+      document.getElementById('stLevel').value = target.level;
+      document.getElementById('studentFormTitle').textContent = `Edit Data Master Siswa (${target.code})`;
+      document.getElementById('stSubmitBtn').textContent = 'Update Data Siswa';
+      document.getElementById('stCancelBtn').classList.remove('hidden');
+      document.getElementById('stName').focus();
+    }
+
+    function cancelEditStudent() {
+      editingCode = null;
+      document.getElementById('studentForm').reset();
+      document.getElementById('studentFormTitle').textContent = 'Tambah Data Master Siswa';
+      document.getElementById('stSubmitBtn').textContent = 'Simpan ke Master Siswa';
+      document.getElementById('stCancelBtn').classList.add('hidden');
+    }
+
+    document.getElementById('studentForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const code = document.getElementById('stCode').value.trim().toUpperCase();
+      const name = document.getElementById('stName').value.trim();
+      const program = document.getElementById('stProgram').value;
+      const level = document.getElementById('stLevel').value.trim();
+      const record = { code, name, program, level };
+
+      if (editingCode) {
+        const editIdx = students.findIndex(s => s.code.toUpperCase() === editingCode.toUpperCase());
+        const dupIdx = students.findIndex(s => s.code.toUpperCase() === code);
+        if (dupIdx >= 0 && dupIdx !== editIdx) {
+          alert(`Kode "${code}" sudah dipakai siswa lain.`);
+          return;
+        }
+        if (editIdx >= 0) {
+          students[editIdx] = record;
+          logs = logs.map(l => l.code.toUpperCase() === editingCode.toUpperCase()
+            ? { ...l, code, name, program, level }
+            : l
+          );
+        }
+      } else {
+        const existingIdx = students.findIndex(s => s.code.toUpperCase() === code);
+        if (existingIdx >= 0) students[existingIdx] = record;
+        else students.push(record);
+      }
+
+      saveCache();
+      await postToGoogle({ action: 'saveStudent', record, editingCode });
+      cancelEditStudent();
+      renderMaster();
+      renderLogs();
+      alert('Data siswa tersimpan ke Google Sheet Admin.');
+    });
+
+    function renderMaster() {
+      const tbody = document.getElementById('masterTableBody');
+      tbody.innerHTML = '';
+      students.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${s.code}</strong></td>
+          <td>${s.name}</td>
+          <td>${getProgramBadge(s.program)}</td>
+          <td>${s.level}</td>
+          <td>
+            <div class="action-group">
+              <button type="button" class="btn-edit" onclick="startEditStudent('${s.code}')">Edit</button>
+              <button type="button" class="btn-danger" onclick="deleteStudent('${s.code}')">Hapus</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function deleteStudent(code) {
+      if (!confirm(`Hapus siswa ${code} dari master?`)) return;
+      if (editingCode && editingCode.toUpperCase() === code.toUpperCase()) {
+        cancelEditStudent();
+      }
+      students = students.filter(s => s.code !== code);
+      saveCache();
+      renderMaster();
+      await postToGoogle({ action: 'deleteStudent', code });
+    }
+
+    function renderBarcodes() {
+      const container = document.getElementById('barcodeList');
+      container.innerHTML = '';
+      students.forEach((s, idx) => {
+        const svgId = 'bc-' + idx;
+        const card = document.createElement('div');
+        card.className = 'barcode-card';
+        card.innerHTML = `
+          <div class="nama">${s.name}</div>
+          <div class="meta">${getProgramBadge(s.program)} <span>${s.code} • ${s.level}</span></div>
+          <svg id="${svgId}"></svg>
+        `;
+        container.appendChild(card);
+        JsBarcode('#' + svgId, s.code, {
+          format: 'CODE128',
+          width: 2,
+          height: 55,
+          displayValue: true,
+          fontSize: 13
+        });
+      });
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    syncFromGoogle();
+  </script>
+</body>
+</html>
